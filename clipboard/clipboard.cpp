@@ -1,6 +1,7 @@
 // clipboard.cpp
 
 #include <windows.h>
+#include <conio.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -36,7 +37,7 @@ std::string GetClipboardText() {
 int main() {
     std::string lastText;
 	int capacity = 1000; // Max number of entries in history
-	BoundedQueue history(capacity);
+	CQueue history(capacity);
 
     std::ofstream outFile("clipboard_history.txt", std::ios::app);
 
@@ -46,6 +47,14 @@ int main() {
         std::cerr << "Failed to open clipboard_history.txt for writing.\n";
         return -1;
 	}
+
+	NOTIFYICONDATAA nid = {};
+    AllocConsole();
+	HWND h = FindWindowA("ConsoleWindowClass", NULL);
+	nid.cbSize = sizeof(nid);
+	nid.hWnd = h;
+
+    Shell_NotifyIconA(NIM_ADD, &nid);
 
     std::cout << "Monitoring clipboard for new text...\n";
 

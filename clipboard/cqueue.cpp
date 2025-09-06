@@ -13,7 +13,10 @@ CQueue::CQueue(int cap) {
 void CQueue::push(const std::string& value) {
 	head = (++head) % capacity;
     data[head] = value;
-    count = head;
+
+    if (count < capacity) {
+        count++;
+    }
 }
 
 std::string CQueue::peek() {
