@@ -9,7 +9,7 @@
 #include <list>
 #include <fstream>
 
-#include "BoundedQueue.hpp"
+#include "cqueue.hpp"
 
 
 std::string GetClipboardText() {
@@ -51,7 +51,7 @@ int main() {
 
     while (true) {
         std::string currentText = GetClipboardText();
-        if (!currentText.empty() && currentText != lastText) {
+        if (!currentText.empty() && currentText != history.peek()) {
             lastText = currentText;
 			history.push(currentText);
 

@@ -123,11 +123,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BoundedQueue.cpp" />
+    <ClCompile Include="cqueue.cpp" />
     <ClCompile Include="clipboard.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BoundedQueue.hpp" />
+    <ClInclude Include="cqueue.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

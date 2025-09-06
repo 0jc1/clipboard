@@ -18,12 +18,12 @@
     <ClCompile Include="clipboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BoundedQueue.cpp">
+    <ClCompile Include="cqueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BoundedQueue.hpp">
+    <ClInclude Include="cqueue.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
