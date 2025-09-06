@@ -1,23 +1,63 @@
-// clipboard.cpp 
+// clipboard.cpp
 
+#include <windows.h>
 #include <iostream>
-#include <cstdio>
+#include <string>
+#include <vector>
+#include <thread>
+#include <chrono>
+#include <list>
+#include <fstream>
 
-// entry point for the console application
-int main()
-{
-    std::cout << "Hello World!\n";
+#include "BoundedQueue.hpp"
 
-	exit(0);
+
+std::string GetClipboardText() {
+    if (!OpenClipboard(nullptr))
+        return "";
+
+	HANDLE hData = GetClipboardData(CF_TEXT); //pointer to the clipboard data in CF_TEXT format
+    if (hData == nullptr) {
+        CloseClipboard();
+        return "";
+    }
+
+    char* pszText = static_cast<char*>(GlobalLock(hData));
+
+    GlobalUnlock(hData);
+    CloseClipboard();
+
+    if (pszText == nullptr)
+        return "";
+
+    return pszText;
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
+int main() {
+    std::string lastText;
+	int capacity = 100; // Max number of entries in history
+	BoundedQueue history(capacity);
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+    std::cout << "Monitoring clipboard for new text...\n";
+
+    std::ofstream outFile("clipboard_history.txt", std::ios::app);
+
+    while (true) {
+        std::string currentText = GetClipboardText();
+        if (!currentText.empty() && currentText != lastText) {
+            std::cout << "New clipboard text:\n" << currentText << "\n";
+            lastText = currentText;
+
+            // Save to file
+            if (outFile.is_open()) {
+                outFile << currentText << "\n---\n"; // Separator between entries
+                outFile.close();
+            } else {
+                std::cerr << "Failed to open clipboard_history.txt for writing.\n";
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+
+    return 0;
+}

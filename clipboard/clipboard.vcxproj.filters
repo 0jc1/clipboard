@@ -18,5 +18,13 @@
     <ClCompile Include="clipboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BoundedQueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BoundedQueue.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
