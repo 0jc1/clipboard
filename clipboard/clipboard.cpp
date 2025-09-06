@@ -35,29 +35,38 @@ std::string GetClipboardText() {
 
 int main() {
     std::string lastText;
-	int capacity = 100; // Max number of entries in history
+	int capacity = 1000; // Max number of entries in history
 	BoundedQueue history(capacity);
 
-    std::cout << "Monitoring clipboard for new text...\n";
-
     std::ofstream outFile("clipboard_history.txt", std::ios::app);
+
+    if (outFile.is_open()) {
+        std::cout << "Opened clipboard_history.txt.\n";
+    } else {
+        std::cerr << "Failed to open clipboard_history.txt for writing.\n";
+        return -1;
+	}
+
+    std::cout << "Monitoring clipboard for new text...\n";
 
     while (true) {
         std::string currentText = GetClipboardText();
         if (!currentText.empty() && currentText != lastText) {
-            std::cout << "New clipboard text:\n" << currentText << "\n";
             lastText = currentText;
+			history.push(currentText);
 
             // Save to file
             if (outFile.is_open()) {
-                outFile << currentText << "\n---\n"; // Separator between entries
-                outFile.close();
+                outFile << currentText << "\n"; 
             } else {
                 std::cerr << "Failed to open clipboard_history.txt for writing.\n";
             }
+
+            std::cout << "New clipboard text:\n" << currentText << "\n";
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
+    outFile.close();
     return 0;
 }
