@@ -53,6 +53,8 @@ int main() {
 	HWND h = FindWindowA("ConsoleWindowClass", NULL);
 	nid.cbSize = sizeof(nid);
 	nid.hWnd = h;
+    nid.uFlags = NIF_TIP | NIF_ICON;
+	memcpy(nid.szTip, "Clipboard Manager", 128); // Tooltip text
 
     Shell_NotifyIconA(NIM_ADD, &nid);
 
