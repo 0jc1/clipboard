@@ -1,2 +1,2 @@
 # clipboard
-Clipboard manager for Windows written in C++
+Clipboard manager for Windows
