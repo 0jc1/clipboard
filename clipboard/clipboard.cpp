@@ -16,58 +16,85 @@
 
 #include "cqueue.hpp"
 
-// Custom message for tray icon events
-#define WM_TRAYICON (WM_USER + 1)
 
-std::string GetClipboardText() {
-    if (!OpenClipboard(nullptr))
-        return "";
+#define WM_TRAYICON (WM_USER + 1) // Custom message for tray icon events
+#define CAPACITY 100 // Capacity of clipboard history
 
-	HANDLE hData = GetClipboardData(CF_TEXT); //pointer to the clipboard data in CF_TEXT format
-    if (hData == nullptr) {
-        CloseClipboard();
-        return "";
+std::string lastText;
+CQueue *history = new CQueue(CAPACITY);
+std::ofstream outFile;
+
+
+//void writeToFile(const std::string& text) {
+//    // Close and reopen the file in truncate mode to clear it
+//    if (outFile.is_open()) {
+//        outFile.close();
+//    }
+//    outFile.open("clipboard_history.txt", std::ios::trunc);
+//    
+//    if (outFile.is_open()) {
+//        // Write the new text with timestamp
+//        history->printFile(outFile); 
+//        outFile.flush();
+//    } else {
+//        std::cerr << "Failed to open clipboard_history.txt for writing.\n";
+//    }
+//}
+
+void writeToFile(const std::string& text) {
+    if (outFile.is_open()) {
+        outFile << "[" << GetCurrentTimeString() << "]: " << text << std::endl;
+        outFile.flush();
+    } else {
+        std::cerr << "Failed to open clipboard_history.txt for writing.\n";
     }
-
-    char* pszText = static_cast<char*>(GlobalLock(hData));
-
-    GlobalUnlock(hData);
-    CloseClipboard();
-
-    if (pszText == nullptr)
-        return "";
-
-    return pszText;
-}
-
-// Returns current time as a formatted string
-std::string GetCurrentTimeString() {
-    auto now = std::chrono::system_clock::now();
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-    std::tm tm_buf;
-    localtime_s(&tm_buf, &now_c); // Use thread-safe version
-    std::ostringstream oss;
-    oss << "[" << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S") << "]";
-    return oss.str();
 }
 
 // Window procedure to handle tray icon messages
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (uMsg == WM_TRAYICON) {
-        if (lParam == WM_LBUTTONUP) { // Left mouse button released
-            // Open clipboard_history.txt with the default editor
-            ShellExecuteA(NULL, "open", "clipboard_history.txt", NULL, NULL, SW_SHOWNORMAL);
-        }
-    }
+
+    switch(uMsg) {
+        case WM_CREATE:
+            AddClipboardFormatListener(hwnd);
+            break;
+        case WM_TRAYICON:
+            if (lParam == WM_LBUTTONUP) { // Left mouse button released
+                // Open clipboard_history.txt with the default editor
+                ShellExecuteA(NULL, "open", "clipboard_history.txt", NULL, NULL, SW_SHOWNORMAL);
+            }
+            break;
+        case WM_CLIPBOARDUPDATE:
+            if (OpenClipboard(nullptr)) {
+                HANDLE hData = GetClipboardData(CF_TEXT);
+                if (hData) {
+                    char* pszText = (char*)GlobalLock(hData);
+                    GlobalUnlock(hData);
+                    if (pszText != nullptr) {
+                        std::string text = pszText ? pszText : "";
+                        if (lastText != text && !text.empty()) {
+                            std::cout << "New text: " << text << std::endl;
+							history->push(text);
+							writeToFile(text);
+                            lastText = text;
+                        }
+					}
+                }
+                CloseClipboard();
+            }
+            break;
+        case WM_DESTROY:
+            RemoveClipboardFormatListener(hwnd);
+            PostQuitMessage(0);
+            break;
+        default:
+            break;
+	}
+
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 int main() {
-    std::string lastText;
-	int capacity = 3; // Max number of entries in history
-	CQueue history(capacity);
-
-    std::ofstream outFile("clipboard_history.txt", std::ios::app);
+    outFile = std::ofstream("clipboard_history.txt", std::ios::app);
 
     if (outFile.is_open()) {
         std::cout << "Opened clipboard_history.txt.\n";
@@ -104,28 +131,6 @@ int main() {
 
     std::cout << "Monitoring clipboard for new text...\n";
 
-    // Start clipboard monitoring in a separate thread
-    std::thread clipboardThread([&]() {
-        while (true) {
-            std::string currentText = GetClipboardText();
-            if (!currentText.empty() && currentText != history.peek()) {
-                lastText = currentText;
-				history.push(currentText);
-
-                // Save to file
-                if (outFile.is_open()) {
-                    outFile << "\n" << GetCurrentTimeString() << " " << currentText << "\n";
-                    outFile.flush(); 
-                } else {
-                    std::cerr << "Failed to open clipboard_history.txt for writing.\n";
-                }
-
-                std::cout << GetCurrentTimeString() << "New clipboard text: " << currentText << "\n";
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    });
-
     // Message loop
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
@@ -133,7 +138,6 @@ int main() {
         DispatchMessage(&msg);
     }
 
-    clipboardThread.join();
     outFile.close();
     return 0;
 }

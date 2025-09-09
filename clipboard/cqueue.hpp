@@ -2,10 +2,11 @@
 
 #include <vector>
 #include <string>
+#include <fstream>
 
 
 /**
- * Circular queue.
+ * Custom circular queue 
  *
  * @note This class is not thread-safe.
  * 
@@ -13,14 +14,22 @@
  *
  */
 
+std::string GetCurrentTimeString();
+
+struct Data {
+    std::string text;
+    std::string time;
+};
+
 class CQueue {
-    std::vector<std::string> data;
+    std::vector<Data> data;
     int head = 0;
     int count = 0;
-    int capacity = 100;
 public:
+    int capacity = 100;
     explicit CQueue(int cap);
     void push(const std::string& value);
-    void print() const;
-    std::string peek();
+    void print() const;           // Print to std::cout
+    void printFile(std::ofstream& ofs) const; // Print to file
+    Data peek();
 };
