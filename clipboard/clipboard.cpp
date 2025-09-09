@@ -64,7 +64,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 int main() {
     std::string lastText;
-	int capacity = 1000; // Max number of entries in history
+	int capacity = 3; // Max number of entries in history
 	CQueue history(capacity);
 
     std::ofstream outFile("clipboard_history.txt", std::ios::app);
@@ -114,19 +114,19 @@ int main() {
 
                 // Save to file
                 if (outFile.is_open()) {
-                    outFile << GetCurrentTimeString() << " " << currentText << "\n";
+                    outFile << "\n" << GetCurrentTimeString() << " " << currentText << "\n";
                     outFile.flush(); 
                 } else {
                     std::cerr << "Failed to open clipboard_history.txt for writing.\n";
                 }
 
-                std::cout << "New clipboard text:\n" << currentText << "\n";
+                std::cout << GetCurrentTimeString() << "New clipboard text: " << currentText << "\n";
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     });
 
-    // Message loop to handle tray icon events
+    // Message loop
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
