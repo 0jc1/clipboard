@@ -1,6 +1,7 @@
 // clipboard.cpp
 
 #include <windows.h>
+#include <winreg.h> // For registry functions
 #include <conio.h>
 #include <iostream>
 #include <string>
@@ -50,6 +51,36 @@ void writeToFile(const std::string& text) {
     }
 }
 
+// Add this function near the top of the file, after the includes
+bool SetStartupRun(bool enable) {
+    HKEY hKey;
+    const char* keyPath = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+    const char* valueName = "ClipboardManager";
+    
+    // Get the full path of the executable
+    char exePath[MAX_PATH];
+    if (GetModuleFileNameA(NULL, exePath, MAX_PATH) == 0) {
+        return false;
+    }
+
+    // Open the registry key
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, keyPath, 0, KEY_SET_VALUE, &hKey) != ERROR_SUCCESS) {
+        return false;
+    }
+
+    bool success = false;
+    if (enable) {
+        // Add to startup
+        success = (RegSetValueExA(hKey, valueName, 0, REG_SZ, 
+            (const BYTE*)exePath, strlen(exePath) + 1) == ERROR_SUCCESS);
+    } else {
+        // Remove from startup
+        success = (RegDeleteValueA(hKey, valueName) == ERROR_SUCCESS);
+    }
+
+    RegCloseKey(hKey);
+    return success;
+}
 // Window procedure to handle tray icon messages
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
@@ -102,6 +133,10 @@ int main() {
         std::cerr << "Failed to open clipboard_history.txt for writing.\n";
         return -1;
 	}
+
+    if (!SetStartupRun(true)) {
+        std::cerr << "Failed to set startup registry entry.\n";
+    }
 
     // Register a window class for tray icon messages
     WNDCLASSA wc = {};

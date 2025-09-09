@@ -29,7 +29,7 @@ void CQueue::push(const std::string& value) {
 
 Data CQueue::peek() {
     if (count == 0) {
-        return;
+        return Data{};
 	}
     return data[head];
 }
